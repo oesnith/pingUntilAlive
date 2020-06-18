@@ -3,7 +3,7 @@ Run a continuous ping check or port check until it's alive, then stop and print 
 
 Flags:
 
--h :: host (Required)
+-h :: host (Required - FQDN or IP)
 
 -c :: count (number of pings to send)
 
