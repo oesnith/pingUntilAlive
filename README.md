@@ -10,7 +10,3 @@ Flags:
 -t :: timeout (number of seconds to wait for ping return)
 
 -p :: port (for TCP port check)
-
-Todo:
-
-Add a --help and clean up proper Usage information when flags are missing or used wrong.
