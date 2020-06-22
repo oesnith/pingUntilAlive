@@ -82,7 +82,7 @@ else # If the host flag is populated set defaults for timeout and count if none 
 
    # Setting up some variables
    pingaddress=$host
-   hostresolve=`dig +short $host`
+   hostresolve=`dig +short $host | awk '{print ; exit }'`
    if [ -z $hostresolve ]; then
       printip=""
    else
