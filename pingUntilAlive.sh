@@ -16,15 +16,22 @@
 programname=$0
 usage () {
    echo
-   echo "Usage: $programname -h FQDN [-c count] [-t timeout] [-p port]"
+   echo "Usage: $programname -h FQDN [-c count] [-t timeout] [-p port] [-n USERKEY|APIKEY]"
    echo "  -h	host (FQDN or IP)"
    echo "  -c	count (number of pings to send)"
    echo "  -t	timeout (number of second to wait for ping return)"
    echo "  -p	port (for TCP port check)"
+   echo "  -n	notification (Enable Pushover Notification - Must include USERKEY and APIKEY from your Pushover account delimited by '::')"
    exit 1
 }
 
-while getopts ":p:c:h:t:" opt; do
+sendPushover () {
+   local title="${1:cli-app}"
+   local message="$2"
+   [[ "$message" != "" ]] && curl -s --form-string "token=${PO_ApiKey}" --form-string "user=${PO_UserKey}" --form-string "title=$title" --form-string "message=$message" https://api.pushover.net/1/messages.json
+}
+
+while getopts ":p:c:h:t:n:" opt; do
    case $opt in
       p) # -p :: Port to test (will test via TCP)
          port=$OPTARG
@@ -55,6 +62,15 @@ while getopts ":p:c:h:t:" opt; do
             echo "Invalid argument for -t paramater. Must be a number" 
 	    usage	
          fi
+         ;;
+      n) # -n Pushover notification - USERKEY|APIKEY
+         PO_info=$OPTARG
+         if [[ "$PO_info" != *"::"* ]]; then
+            echo "Invalid argument for -n parameter. Must include your Pushover User Key and Pushover API Key delimited by '::'"
+            usage
+         fi
+         PO_UserKey=`echo $PO_info | awk -F "::" '{print $1}'`
+         PO_ApiKey=`echo $PO_info | awk -F "::" '{print $2}'`
          ;;
       \?)
          echo "Invalid option: -$OPTARG" >&2
@@ -145,7 +161,14 @@ else # If the host flag is populated set defaults for timeout and count if none 
          else
             livetext="Port $port"
          fi
-         echo "$livetext live @ `date`"
+	 printtext="$livetext live @ `date`"
+         echo "$printtext"
+	 if [ ! -x $PO_info ]; then
+            echo -n "Sending Pushover notification : "
+	    sendPushover "pingUntilAlive - $host Alive" "$printtext
+$j $attempts"
+	    echo
+         fi
          exit
          #else
             #echo "ping failed @ `date`"
