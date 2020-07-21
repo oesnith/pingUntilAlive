@@ -28,8 +28,38 @@ usage () {
 sendPushover () {
    local title="${1:cli-app}"
    local message="$2"
-   [[ "$message" != "" ]] && curl -s --form-string "token=${PO_ApiKey}" --form-string "user=${PO_UserKey}" --form-string "title=$title" --form-string "message=$message" https://api.pushover.net/1/messages.json
+   [[ "$message" != "" ]] && $curlcmd -s --form-string "token=${PO_ApiKey}" --form-string "user=${PO_UserKey}" --form-string "title=$title" --form-string "message=$message" https://api.pushover.net/1/messages.json
 }
+
+# Check for prereqs
+prereq_failed="FALSE"
+prereq_failed_text=""
+curlcmd=`which curl`
+digcmd=`which dig`
+pingcmd=`which ping`
+if [ -z "$curlcmd" ] ; then
+   prereq_failed="TRUE"
+   prereq_failed_text=$'curl\n'
+fi   
+if [ -z "$digcmd" ] ; then
+   prereq_failed="TRUE"
+   prereq_failed_text_tmp=$'dig\n'
+   prereq_failed_text="$prereq_failed_text$prereq_failed_text_tmp"
+fi   
+if [ -z "$pingcmd" ] ; then
+   prereq_failed="TRUE"
+   prereq_failed_text_tmp=$'ping\n'
+   prereq_failed_text="$prereq_failed_text$prereq_failed_text_tmp"
+fi   
+if [[ "$prereq_failed" == "TRUE" ]] ; then
+   echo "***WARNING! SCRIPT EXITED***"
+   echo "Your system is missing the following required package(s):"
+   echo "$prereq_failed_text"
+   echo "Please install before continuing."
+   usage
+fi
+
+
 
 while getopts ":p:c:h:t:n:" opt; do
    case $opt in
@@ -98,7 +128,7 @@ else # If the host flag is populated set defaults for timeout and count if none 
 
    # Setting up some variables
    pingaddress=$host
-   hostresolve=`dig +short $host | awk '{print ; exit }'`
+   hostresolve=`$digcmd +short $host | awk '{print ; exit }'`
    if [ -z $hostresolve ]; then
       printip=""
    else
@@ -139,7 +169,7 @@ else # If the host flag is populated set defaults for timeout and count if none 
       # If the port is set then do the TCP port check, if not do a ICMP ping.
       if [ -x $port ]; then
          # Ping with the variables set, capturing only the number of pings returned.
-         pingreceived=`ping -q -W$timeout -c$count $pingaddress | grep received | awk '{print $4}'`
+         pingreceived=`$pingcmd -q -W$timeout -c$count $pingaddress | grep received | awk '{print $4}'`
       else
          # Using /dev/tcp to test the port requested. One-liner if statement
          if echo "blarg" 2>/dev/null > /dev/tcp/$pingaddress/$port; then tcpreturn=1; else tcpreturn=0; fi
