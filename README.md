@@ -14,6 +14,7 @@ Run a continuous ping check or port check until it's alive, then stop and print 
 -h :: host (Required - FQDN or IP)
 -c :: count (number of pings to send)
 -t :: timeout (number of seconds to wait for ping return)
+-s :: sleep (number of seconds to wait between attempts)
 -p :: port (for TCP port check)
 -n :: notification (Enable Pushover Notification)
       Must include USERKEY and APIKEY from your Pushover account delimited by '::'
