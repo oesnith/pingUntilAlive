@@ -9,6 +9,7 @@
 # -h :: host (Required - FQDN or IP)                                                  #
 # -c :: count (number of pings to send)                                               #
 # -t :: timeout (number of seconds to wait for ping return)                           #
+# -s :: sleep (number of seconds to wait between attempts)
 # -p :: port (for TCP port check)                                                     #
 # -n :: notification (Enable Pushover Notification)                                   #
 #       Must include USERKEY and APIKEY from your Pushover account delimited by '::'  #
@@ -28,16 +29,17 @@ usage () {
    echo "  -h	host (FQDN or IP)"
    echo "  -c	count (number of pings to send)"
    echo "  -t	timeout (number of second to wait for ping return)"
+   echo "  -s    sleep (number of seconds to wait between attempts)"
    echo "  -p	port (for TCP port check)"
    echo "  -n	notification (Enable Pushover Notification)"
    echo "          Must include USERKEY and APIKEY from your Pushover account"
    echo "          delimited by '::'" 
    echo "          -n will override -N"
-   echo "  -N   notification (Enable Pushover Notification) from config file."
+   echo "  -N    notification (Enable Pushover Notification) from config file."
    echo "          Uses the Pushover API information from the config file."
    echo "          Defined using -f, or using pingUntilAlive.conf located in"
    echo "          script directory"
-   echo "  -f   config file - Full path.  Default: pingUntilAlive.conf located"
+   echo "  -f    config file - Full path.  Default: pingUntilAlive.conf located"
    echo "          in the directory with this script"
    exit 1
 }
@@ -78,7 +80,7 @@ fi
 #Runtime variables
    configfile="pingUntilAlive.conf"
 
-while getopts ":p:c:h:t:f:n:N" opt; do
+while getopts ":p:c:h:t:f:n:N:s:" opt; do
    case $opt in
       p) # -p :: Port to test (will test via TCP)
          port=$OPTARG
@@ -109,6 +111,15 @@ while getopts ":p:c:h:t:f:n:N" opt; do
             echo "Invalid argument for -t paramater. Must be a number" 
 	    usage	
          fi
+         ;;
+      s) # -s :: sleep (number of seconds to wait between attempts) 
+         sleeptime=$OPTARG
+         if [ -n "$sleeptime" ] && [ "$sleeptime" -eq "$sleeptime" ] 2>/dev/null; then
+            echo -ne
+         else
+            echo "Invalid argument for -s parameter. Must be a number"
+            usage
+         fi	   
          ;;
       f) # -f Config File
          configfile=$OPTARG 
@@ -167,6 +178,12 @@ else # If the host flag is populated set defaults for timeout and count if none 
    if [ -z $count ] ; then
       count=1
    fi
+   if [ -z $sleeptime ] ; then
+      sleeptime=0
+      sleeptimemsg=""
+   else
+      sleeptimemsg="       ($sleeptime seconds between attempts)"
+   fi
 
    # Setting up some variables
    pingaddress=$host
@@ -193,6 +210,9 @@ else # If the host flag is populated set defaults for timeout and count if none 
    fi
    
    echo "$testtext $pingaddress$printip until live . . ."
+   if [ ! "$sleeptimemsg" == "" ]; then
+      echo "$sleeptimemsg"
+   fi
 	
    # Keep going until the ping is successful.
    while [ $pinglive -eq 0 ]
@@ -247,6 +267,7 @@ $j $attempts"
       fi
       ((i=i+1))
       ((j=j+1))
+      sleep $sleeptime
    done
 fi
 		
