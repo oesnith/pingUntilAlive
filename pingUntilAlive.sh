@@ -80,7 +80,7 @@ fi
 #Runtime variables
    configfile="pingUntilAlive.conf"
 
-while getopts ":p:c:h:t:f:n:N:s:" opt; do
+while getopts ":p:c:h:t:f:n:s:N" opt; do
    case $opt in
       p) # -p :: Port to test (will test via TCP)
          port=$OPTARG
